@@ -4,6 +4,10 @@
 #include <ArduinoJson.h>
 #include <Wire.h>
 
+/*
+Pin assignments
+*/
+
 #define POTI_1 27
 #define POTI_2 14
 #define POTI_3 12
@@ -23,15 +27,10 @@
 #define BUTTON_9 4
 #define BUTTON_10 16
 
+#define POTI_MIDI_SCALE_MIN 64
+#define POTI_MIDI_SCALE_MAX 127
+
 U8G2_SH1106_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, /* reset=*/ U8X8_PIN_NONE, OLED_SCL, OLED_SDA);
-
-const int poti1 = POTI_1;
-const int poti2 = POTI_2;
-const int poti3 = POTI_3;
-const int poti4 = POTI_4;
-
-const unsigned short poti_midi_scale_min = 64;
-const unsigned short poti_midi_scale_max = 127;
 
 const uint8_t midi_channel = 1;
 const uint8_t controller_number = 0;
@@ -91,10 +90,10 @@ void setup() {
 
 void loop() {
 
-  int sensorValue_1 = map(analogRead(poti1), 4095, 0, poti_midi_scale_min, poti_midi_scale_max);
+  int sensorValue_1 = map(analogRead(POTI_1), 4095, 0, POTI_MIDI_SCALE_MIN, POTI_MIDI_SCALE_MAX);
   if (abs(hysteresis_1 - sensorValue_1) > 1) {
     hysteresis_1 = sensorValue_1;
-    if (sensorValue_1 == poti_midi_scale_min) {
+    if (sensorValue_1 == POTI_MIDI_SCALE_MIN) {
       MIDI.sendControlChange(1, 0, 1);
     }
     else {
@@ -102,10 +101,10 @@ void loop() {
     }
   }
 
-  int sensorValue_2 = map(analogRead(poti2), 4095, 0, poti_midi_scale_min, poti_midi_scale_max);
+  int sensorValue_2 = map(analogRead(POTI_2), 4095, 0, POTI_MIDI_SCALE_MIN, POTI_MIDI_SCALE_MAX);
   if (abs(hysteresis_2 - sensorValue_2) > 1) {
     hysteresis_2 = sensorValue_2;
-    if (sensorValue_2 == poti_midi_scale_min) {
+    if (sensorValue_2 == POTI_MIDI_SCALE_MIN) {
       MIDI.sendControlChange(2, 0, 1);
     }
     else {
@@ -113,10 +112,10 @@ void loop() {
     }
   }
 
-  int sensorValue_3 = map(analogRead(poti3), 4095, 0, poti_midi_scale_min, poti_midi_scale_max);
+  int sensorValue_3 = map(analogRead(POTI_3), 4095, 0, POTI_MIDI_SCALE_MIN, POTI_MIDI_SCALE_MAX);
   if (abs(hysteresis_3 - sensorValue_3) > 1) {
     hysteresis_3 = sensorValue_3;
-    if (sensorValue_3 == poti_midi_scale_min) {
+    if (sensorValue_3 == POTI_MIDI_SCALE_MIN) {
       MIDI.sendControlChange(3, 0, 1);
     }
     else {
@@ -124,10 +123,10 @@ void loop() {
     }
   }
 
-  int sensorValue_4 = map(analogRead(poti4), 4095, 0, poti_midi_scale_min, poti_midi_scale_max);
+  int sensorValue_4 = map(analogRead(POTI_4), 4095, 0, POTI_MIDI_SCALE_MIN, POTI_MIDI_SCALE_MAX);
   if (abs(hysteresis_4 - sensorValue_4) > 1) {
     hysteresis_4 = sensorValue_4;
-    if (sensorValue_4 == poti_midi_scale_min) {
+    if (sensorValue_4 == POTI_MIDI_SCALE_MIN) {
       MIDI.sendControlChange(4, 0, 1);
     }
     else {
@@ -288,8 +287,8 @@ void drawLevelsScreen() {
   u8g2.setCursor(4, 26);
   u8g2.print("L1");
   u8g2.drawFrame(21, 16, 105, 10);
-  if (hysteresis_1 > poti_midi_scale_min) {
-    u8g2.drawBox(23, 18, map(hysteresis_1, poti_midi_scale_min, poti_midi_scale_max, 0, 101), 6);
+  if (hysteresis_1 > POTI_MIDI_SCALE_MIN) {
+    u8g2.drawBox(23, 18, map(hysteresis_1, POTI_MIDI_SCALE_MIN, POTI_MIDI_SCALE_MAX, 0, 101), 6);
   }
   else {
     u8g2.setCursor(23, 24);
@@ -301,8 +300,8 @@ void drawLevelsScreen() {
   u8g2.setCursor(4, 38);
   u8g2.print("L2");
   u8g2.drawFrame(21, 28, 105, 10);
-  if (hysteresis_2 > poti_midi_scale_min) {
-    u8g2.drawBox(23, 30, map(hysteresis_2, poti_midi_scale_min, poti_midi_scale_max, 0, 101), 6);
+  if (hysteresis_2 > POTI_MIDI_SCALE_MIN) {
+    u8g2.drawBox(23, 30, map(hysteresis_2, POTI_MIDI_SCALE_MIN, POTI_MIDI_SCALE_MAX, 0, 101), 6);
   }
   else {
     u8g2.setCursor(23, 36);
@@ -314,8 +313,8 @@ void drawLevelsScreen() {
   u8g2.setCursor(4, 50);
   u8g2.print("L3");
   u8g2.drawFrame(21, 40, 105, 10);
-  if (hysteresis_3 > poti_midi_scale_min) {
-    u8g2.drawBox(23, 42, map(hysteresis_3, poti_midi_scale_min, poti_midi_scale_max, 0, 101), 6);
+  if (hysteresis_3 > POTI_MIDI_SCALE_MIN) {
+    u8g2.drawBox(23, 42, map(hysteresis_3, POTI_MIDI_SCALE_MIN, POTI_MIDI_SCALE_MAX, 0, 101), 6);
   }
   else {
     u8g2.setCursor(23, 48);
@@ -327,8 +326,8 @@ void drawLevelsScreen() {
   u8g2.setCursor(4, 62);
   u8g2.print("L4");
   u8g2.drawFrame(21, 52, 105, 10);
-  if (hysteresis_4 > poti_midi_scale_min) {
-    u8g2.drawBox(23, 54, map(hysteresis_4, poti_midi_scale_min, poti_midi_scale_max, 0, 101), 6);
+  if (hysteresis_4 > POTI_MIDI_SCALE_MIN) {
+    u8g2.drawBox(23, 54, map(hysteresis_4, POTI_MIDI_SCALE_MIN, POTI_MIDI_SCALE_MAX, 0, 101), 6);
   }
   else {
     u8g2.setCursor(23, 60);
