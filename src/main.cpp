@@ -35,7 +35,7 @@
 #define POTI_MIDI_SCALE_MIN 64
 #define POTI_MIDI_SCALE_MAX 127
 
-#define EEPROM_SIZE 2     // EEPROM size in bytes, 1 byte for each setting
+#define EEPROM_SIZE 3     // EEPROM size in bytes, 1 byte for each setting
 
 U8G2_SH1106_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, /* reset=*/ U8X8_PIN_NONE, OLED_SCL, OLED_SDA); // I2C screen declaration
 
@@ -59,6 +59,10 @@ static int hysteresis_1 = 0;
 static int hysteresis_2 = 0;
 static int hysteresis_3 = 0;
 static int hysteresis_4 = 0;
+static int poti_return_1 = 0;
+static int poti_return_2 = 0;
+static int poti_return_3 = 0;
+static int poti_return_4 = 0;
 
 bool button1_state = 0;
 bool button2_state = 0;
@@ -74,6 +78,7 @@ bool button10_state = 0;
 bool button1_last_state = 0;
 
 short buttons_page = 1;
+short settings_page = 1;
 
 // ###############
 // VARIABLES AND FLAGS FOR SCREENS
@@ -94,6 +99,7 @@ int menu_position = 0;
 
 short setting_comm_mode = 1; // 1 - MIDI, 2 - 
 short setting_button_shift_mode = 1; // 1 - switch, 2 - shift
+short setting_feedback_mode = 2; // 1 - on, 2 - off
 
 // ###############
 // FUNCTION DECLARATIONS
@@ -105,12 +111,15 @@ void drawSettingsScreen();
 void drawConfirm(const char* feature, const char* status);
 void drawLockScreen();
 
+void handleControlChange(byte channel, byte number, byte value);
+
+
 // ###############
 // SETUP FUNCTION, RUNS ONCE AT STARTUP
 // ###############
 
 void setup() {
-  MIDI.begin(1);
+  MIDI.begin();
   Serial.begin(115200);
   pinMode(BUTTON_1, INPUT_PULLUP);
   pinMode(BUTTON_2, INPUT_PULLUP);
@@ -123,11 +132,15 @@ void setup() {
   pinMode(BUTTON_9, INPUT_PULLUP);
   pinMode(BUTTON_10, INPUT_PULLUP);
 
+  MIDI.turnThruOff();
+  MIDI.setHandleControlChange(handleControlChange);
+
   // EEPROM READ SETTINGS ON STARTUP
 
   EEPROM.begin(EEPROM_SIZE);
   if (EEPROM.read(0) == 1 || EEPROM.read(0) == 2) {setting_comm_mode = EEPROM.read(0);}
   if (EEPROM.read(1) == 1 || EEPROM.read(1) == 2) {setting_button_shift_mode = EEPROM.read(1);}
+  if (EEPROM.read(2) == 1 || EEPROM.read(2) == 2) {setting_feedback_mode = EEPROM.read(2);}
 
   // OLED SCREEN INITIALIZATION AND INTRO ANIMATION
 
@@ -138,6 +151,8 @@ void setup() {
   u8g2.print("deej");
   u8g2.sendBuffer();
   delay(2000);
+
+  MIDI.sendControlChange(127, 127, 1);
 
 }
 
@@ -219,13 +234,13 @@ void loop() {
           {
             button1_last_state = 1;
             MIDI.sendControlChange(5, 127, 1);
-            drawConfirm("rvb", "on");
+            // drawConfirm("RVB", "ON");
           }
           else
           {
             button1_last_state = 0;
             MIDI.sendControlChange(5, 0, 1);
-            drawConfirm("rvb", "off");
+            // drawConfirm("RVB", "OFF");
           }
         }
         else if (buttons_page == 2) 
@@ -498,34 +513,67 @@ void loop() {
       else if (settings_screen_switch) { // ON SETTINGS SCREEN
         if (menu_position == 0) {
           menu_position = 0;
-          if (setting_comm_mode == 1) {
-            setting_comm_mode = 2;
+          if (settings_page == 1) { // PAGE 1
+            if (setting_comm_mode == 1) { // CHANGE COMMUNICATION MODE
+              setting_comm_mode = 2;
+            }
+            else {
+              setting_comm_mode = 1;
+            }
+            EEPROM.write(0, setting_comm_mode);
+            EEPROM.commit();
           }
-          else {
-            setting_comm_mode = 1;
+          if (settings_page == 2) { // PAGE 2
+            if (setting_feedback_mode == 1) { // CHANGE FEEDBACK MODE
+              setting_feedback_mode = 2;
+            }
+            else {
+              setting_feedback_mode = 1;
+            }
+            EEPROM.write(2, setting_feedback_mode);
+            EEPROM.commit();
           }
-          EEPROM.write(0, setting_comm_mode);
-          EEPROM.commit();
+          if (settings_page == 3) { // PAGE 3
+            
+          }
         }
         if (menu_position == 1) {
           menu_position = 1;
-          if (setting_button_shift_mode == 1) {
-            setting_button_shift_mode = 2;
+          if (settings_page == 1) { // PAGE 1
+            if (setting_button_shift_mode == 1) { // CHANGE BUTTON SHIFT MODE
+              setting_button_shift_mode = 2;
+            }
+            else {
+              setting_button_shift_mode = 1;
+            }
+            EEPROM.write(1, setting_button_shift_mode);
+            EEPROM.commit();
           }
-          else {
-            setting_button_shift_mode = 1;
+          if (settings_page == 2) { // PAGE 2
+            
+          } 
+          if (settings_page == 3) { // PAGE 3
+            
           }
-          EEPROM.write(1, setting_button_shift_mode);
-          EEPROM.commit();
         }
-        if (menu_position == 2) {
+        if (menu_position == 2) { // SWITCH PAGES
           menu_position = 2;
+          if (settings_page == 1) {
+           settings_page++; 
+          }
+          else if (settings_page == 2) {
+            settings_page++;
+          }
+          else if (settings_page == 3) {
+            settings_page = 1;
+          }
         }
-        if (menu_position == 3) {
+        if (menu_position == 3) { // GO BACK TO MENU SCREEN
           levels_screen_switch = 0;
           menu_screen_switch = 1;
           settings_screen_switch = 0;
           menu_position = 0;
+          settings_page = 1;
         }
       }
       else if (levels_screen_switch) { // ON LEVELS SCREEN
@@ -543,6 +591,9 @@ void loop() {
     }
   }}
   else {button10_state = 0;}
+
+
+  MIDI.read();
 
   // ###############
   // SCREEN DRAWING
@@ -578,7 +629,6 @@ void loop() {
   }
 
   u8g2.sendBuffer();
-  delay(50);
 
   // ###############
   // BLANK SCREEN LOCK FOR FULL SCREEN CONFIRMATIONS
@@ -646,52 +696,108 @@ void drawLevelsScreen() {
   u8g2.setCursor(4, 26);
   u8g2.print("L1");
   u8g2.drawFrame(21, 16, 105, 10);
-  if (hysteresis_1 > POTI_MIDI_SCALE_MIN) {
-    u8g2.drawBox(23, 18, map(hysteresis_1, POTI_MIDI_SCALE_MIN, POTI_MIDI_SCALE_MAX, 0, 101), 6);
+
+  if (setting_feedback_mode == 1) {
+    if (hysteresis_1 > POTI_MIDI_SCALE_MIN && poti_return_1 > POTI_MIDI_SCALE_MIN + 1) {
+      u8g2.drawBox(23, 18, map(hysteresis_1, POTI_MIDI_SCALE_MIN, POTI_MIDI_SCALE_MAX, 0, 101), 3);
+      u8g2.drawBox(23, 21, map(poti_return_1, POTI_MIDI_SCALE_MIN, POTI_MIDI_SCALE_MAX, 0, 101), 3);
+    }
+    else {
+      u8g2.setCursor(23, 24);
+      u8g2.setFont(u8g2_font_spleen5x8_mf);
+      u8g2.print("MUTE");
+    }
   }
-  else {
-    u8g2.setCursor(23, 24);
-    u8g2.setFont(u8g2_font_spleen5x8_mf);
-    u8g2.print("MUTE");
+  else if (setting_feedback_mode == 2) {
+    if (hysteresis_1 > POTI_MIDI_SCALE_MIN) {
+      u8g2.drawBox(23, 18, map(hysteresis_1, POTI_MIDI_SCALE_MIN, POTI_MIDI_SCALE_MAX, 0, 101), 6);
+    }
+    else {
+      u8g2.setCursor(23, 24);
+      u8g2.setFont(u8g2_font_spleen5x8_mf);
+      u8g2.print("MUTE");
+    }
   }
-  
+
   u8g2.setFont(u8g2_font_luRS10_tf);
   u8g2.setCursor(4, 38);
   u8g2.print("L2");
   u8g2.drawFrame(21, 28, 105, 10);
-  if (hysteresis_2 > POTI_MIDI_SCALE_MIN) {
-    u8g2.drawBox(23, 30, map(hysteresis_2, POTI_MIDI_SCALE_MIN, POTI_MIDI_SCALE_MAX, 0, 101), 6);
+
+  if (setting_feedback_mode == 1) {
+    if (hysteresis_2 > POTI_MIDI_SCALE_MIN && poti_return_2 > POTI_MIDI_SCALE_MIN + 1) {
+      u8g2.drawBox(23, 30, map(hysteresis_2, POTI_MIDI_SCALE_MIN, POTI_MIDI_SCALE_MAX, 0, 101), 3);
+      u8g2.drawBox(23, 33, map(poti_return_2, POTI_MIDI_SCALE_MIN, POTI_MIDI_SCALE_MAX, 0, 101), 3);
+    }
+    else {
+      u8g2.setCursor(23, 36);
+      u8g2.setFont(u8g2_font_spleen5x8_mf);
+      u8g2.print("MUTE");
+    }
   }
-  else {
-    u8g2.setCursor(23, 36);
-    u8g2.setFont(u8g2_font_spleen5x8_mf);
-    u8g2.print("MUTE");
+  else if (setting_feedback_mode == 2) {
+    if (hysteresis_2 > POTI_MIDI_SCALE_MIN) {
+      u8g2.drawBox(23, 30, map(hysteresis_2, POTI_MIDI_SCALE_MIN, POTI_MIDI_SCALE_MAX, 0, 101), 6);
+    }
+    else {
+      u8g2.setCursor(23, 36);
+      u8g2.setFont(u8g2_font_spleen5x8_mf);
+      u8g2.print("MUTE");
+    }
   }
-  
+
   u8g2.setFont(u8g2_font_luRS10_tf);
   u8g2.setCursor(4, 50);
   u8g2.print("L3");
   u8g2.drawFrame(21, 40, 105, 10);
-  if (hysteresis_3 > POTI_MIDI_SCALE_MIN) {
-    u8g2.drawBox(23, 42, map(hysteresis_3, POTI_MIDI_SCALE_MIN, POTI_MIDI_SCALE_MAX, 0, 101), 6);
+
+  if (setting_feedback_mode == 1) {
+    if (hysteresis_3 > POTI_MIDI_SCALE_MIN && poti_return_3 > POTI_MIDI_SCALE_MIN + 1) {
+      u8g2.drawBox(23, 42, map(hysteresis_3, POTI_MIDI_SCALE_MIN, POTI_MIDI_SCALE_MAX, 0, 101), 3);
+      u8g2.drawBox(23, 45, map(poti_return_3, POTI_MIDI_SCALE_MIN, POTI_MIDI_SCALE_MAX, 0, 101), 3);
+    }
+    else {
+      u8g2.setCursor(23, 48);
+      u8g2.setFont(u8g2_font_spleen5x8_mf);
+      u8g2.print("MUTE");
+    }
   }
-  else {
-    u8g2.setCursor(23, 48);
-    u8g2.setFont(u8g2_font_spleen5x8_mf);
-    u8g2.print("MUTE");
+  else if (setting_feedback_mode == 2) {
+    if (hysteresis_3 > POTI_MIDI_SCALE_MIN) {
+      u8g2.drawBox(23, 42, map(hysteresis_3, POTI_MIDI_SCALE_MIN, POTI_MIDI_SCALE_MAX, 0, 101), 6);
+    }
+    else {
+      u8g2.setCursor(23, 48);
+      u8g2.setFont(u8g2_font_spleen5x8_mf);
+      u8g2.print("MUTE");
+    }
   }
 
   u8g2.setFont(u8g2_font_luRS10_tf);
   u8g2.setCursor(4, 62);
   u8g2.print("L4");
   u8g2.drawFrame(21, 52, 105, 10);
-  if (hysteresis_4 > POTI_MIDI_SCALE_MIN) {
-    u8g2.drawBox(23, 54, map(hysteresis_4, POTI_MIDI_SCALE_MIN, POTI_MIDI_SCALE_MAX, 0, 101), 6);
+
+  if (setting_feedback_mode == 1) {
+    if (hysteresis_4 > POTI_MIDI_SCALE_MIN && poti_return_4 > POTI_MIDI_SCALE_MIN + 1) {
+      u8g2.drawBox(23, 54, map(hysteresis_4, POTI_MIDI_SCALE_MIN, POTI_MIDI_SCALE_MAX, 0, 101), 3);
+      u8g2.drawBox(23, 57, map(poti_return_4, POTI_MIDI_SCALE_MIN, POTI_MIDI_SCALE_MAX, 0, 101), 3);
+    }
+    else {
+      u8g2.setCursor(23, 60);
+      u8g2.setFont(u8g2_font_spleen5x8_mf);
+      u8g2.print("MUTE");
+    }
   }
-  else {
-    u8g2.setCursor(23, 60);
-    u8g2.setFont(u8g2_font_spleen5x8_mf);
-    u8g2.print("MUTE");
+  else if (setting_feedback_mode == 2) {
+    if (hysteresis_4 > POTI_MIDI_SCALE_MIN) {
+      u8g2.drawBox(23, 54, map(hysteresis_4, POTI_MIDI_SCALE_MIN, POTI_MIDI_SCALE_MAX, 0, 101), 6);
+    }
+    else {
+      u8g2.setCursor(23, 60);
+      u8g2.setFont(u8g2_font_spleen5x8_mf);
+      u8g2.print("MUTE");
+    }
   }
 }
 
@@ -739,24 +845,46 @@ void drawSettingsScreen() {
   u8g2.setFont(u8g2_font_luRS10_tf);
 
   u8g2.setCursor(12, 26);
-  if (setting_comm_mode == 1) {
-    u8g2.print("mode: midi");
+  if (settings_page == 1) {
+    if (setting_comm_mode == 1) {
+      u8g2.print("mode: midi");
+    }
+    else if (setting_comm_mode == 2) {
+      u8g2.print("mode:");
+    }
   }
-  else if (setting_comm_mode == 2) {
-    u8g2.print("mode:");
+  else if (settings_page == 2) {
+    if (setting_feedback_mode == 1) {
+      u8g2.print("feedback: on");
+    }
+    else if (setting_feedback_mode == 2) {
+      u8g2.print("feedback: off");
+    }
   }
-  
+  else if (settings_page == 3) {
+    u8g2.print("");
+  }
+
   if (menu_position == 0) {
     u8g2.setCursor(4, 26);
     u8g2.print(">");
   }
 
+
   u8g2.setCursor(12, 38);
-  if (setting_button_shift_mode == 1) {
-    u8g2.print("btn mode: switch");
+  if (settings_page == 1) {
+    if (setting_button_shift_mode == 1) {
+      u8g2.print("btn mode: switch");
+    }
+    else if (setting_button_shift_mode == 2) {
+      u8g2.print("btn mode: shift");
+    }
   }
-  else if (setting_button_shift_mode == 2) {
-    u8g2.print("btn mode: shift");
+  else if (settings_page == 2) {
+    u8g2.print("");
+  }
+  else if (settings_page == 3) {
+    u8g2.print("");
   }
 
   if (menu_position == 1) {
@@ -764,8 +892,9 @@ void drawSettingsScreen() {
     u8g2.print(">");
   }
 
+
   u8g2.setCursor(12, 50);
-  u8g2.print("");
+  u8g2.print("next page");
   if (menu_position == 2) {
     u8g2.setCursor(4, 50);
     u8g2.print(">");
@@ -779,21 +908,17 @@ void drawSettingsScreen() {
   }
 }
 
-
 void drawConfirm(const char* feature, const char* status) {
   u8g2.clearBuffer();
-  if (feature == "rvb") {
-    if (status == "on") {
-      u8g2.setFont(u8g2_font_helvB12_tf);
-      u8g2.setCursor((128 - u8g2.getStrWidth("RVB: ON")) / 2, 40);
-      u8g2.print("RVB: ON");
-    }
-    else if (status == "off") {
-      u8g2.setFont(u8g2_font_helvB12_tf);
-      u8g2.setCursor((128 - u8g2.getStrWidth("RVB: OFF")) / 2, 40);
-      u8g2.print("RVB: OFF");
-    }
-  }
+
+  char buf[25];
+  strcpy(buf, feature);
+  strcat(buf, ": ");
+  strcat(buf, status);
+  u8g2.setFont(u8g2_font_helvB12_tf);
+  u8g2.setCursor((128 - u8g2.getStrWidth(buf)) / 2, 40);
+  u8g2.print(buf);
+
   u8g2.sendBuffer();
 
   confirmTime = millis();
@@ -808,6 +933,53 @@ void drawLockScreen() {
   u8g2.print("lock");
   u8g2.sendBuffer();
 }
+
+void handleControlChange(byte channel, byte number, byte value) {
+  if (number == 5) {
+    if (value == 0x7f) {
+      button1_last_state = 1;
+      drawConfirm("RVB", "ON");
+    }
+    else if (value == 0x00) {
+      button1_last_state = 0;
+      drawConfirm("RVB", "OFF");
+    }
+  }
+
+  if (number == 1) {
+    if (value == 0x00) {
+      poti_return_1 = POTI_MIDI_SCALE_MIN;
+    }
+    else if (static_cast<int>(value) > POTI_MIDI_SCALE_MIN) {
+      poti_return_1 = static_cast<int>(value);
+    }
+  }
+  if (number == 2) {
+    if (value == 0x00) {
+      poti_return_2 = POTI_MIDI_SCALE_MIN;
+    }
+    else if (static_cast<int>(value) > POTI_MIDI_SCALE_MIN) {
+      poti_return_2 = static_cast<int>(value);
+    }
+  }
+  if (number == 3) {
+    if (value == 0x00) {
+      poti_return_3 = POTI_MIDI_SCALE_MIN;
+    }
+    else if (static_cast<int>(value) > POTI_MIDI_SCALE_MIN) {
+      poti_return_3 = static_cast<int>(value);
+    }
+  }
+  if (number == 4) {
+    if (value == 0x00) {
+      poti_return_4 = POTI_MIDI_SCALE_MIN;
+    }
+    else if (static_cast<int>(value) > POTI_MIDI_SCALE_MIN) {
+      poti_return_4 = static_cast<int>(value);
+    }
+  }
+}
+
 
 
 
