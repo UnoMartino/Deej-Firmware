@@ -9,15 +9,15 @@
 // Pin assignments
 // ###############
 
-#define POTI_1 27
+#define POTI_1 26 
 #define POTI_2 14
-#define POTI_3 12
+#define POTI_3 27 
 #define POTI_4 13
 
 #define OLED_SCL 22
 #define OLED_SDA 21
 
-#define BUTTON_1 26
+#define BUTTON_1 12 
 #define BUTTON_2 25
 #define BUTTON_3 33
 #define BUTTON_4 32
@@ -25,8 +25,25 @@
 #define BUTTON_6 18
 #define BUTTON_7 15
 #define BUTTON_8 23
-#define BUTTON_9 4
+#define BUTTON_9 4 
 #define BUTTON_10 16
+
+#define BUTTON_1_NAME "1"
+#define BUTTON_2_NAME "2"
+#define BUTTON_3_NAME "3"
+#define BUTTON_4_NAME "4"
+#define BUTTON_5_NAME "5"
+#define BUTTON_6_NAME "6"
+#define BUTTON_7_NAME "7"
+#define BUTTON_8_NAME "8"
+#define BUTTON_1_P2_NAME "9"
+#define BUTTON_2_P2_NAME "10"
+#define BUTTON_3_P2_NAME "11"
+#define BUTTON_4_P2_NAME "12"
+#define BUTTON_5_P2_NAME "13"
+#define BUTTON_6_P2_NAME "14"
+#define BUTTON_7_P2_NAME "15"
+#define BUTTON_8_P2_NAME "16"
 
 // ###############
 // POTENTIOMETER MIDI RESCALE VALUES (0-127) example: Fader down sends 64, Fader up sends 127
@@ -35,7 +52,7 @@
 #define POTI_MIDI_SCALE_MIN 64
 #define POTI_MIDI_SCALE_MAX 127
 
-#define EEPROM_SIZE 3     // EEPROM size in bytes, 1 byte for each setting
+#define EEPROM_SIZE 19     // EEPROM size in bytes, 1 byte for each setting
 
 U8G2_SH1106_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, /* reset=*/ U8X8_PIN_NONE, OLED_SCL, OLED_SDA); // I2C screen declaration
 
@@ -76,6 +93,39 @@ bool button9_state = 0;
 bool button10_state = 0;
 
 bool button1_last_state = 0;
+bool button2_last_state = 0;
+bool button3_last_state = 0;
+bool button4_last_state = 0;
+bool button5_last_state = 0;
+bool button6_last_state = 0;
+bool button7_last_state = 0;
+bool button8_last_state = 0;
+bool button1_p2_last_state = 0;
+bool button2_p2_last_state = 0;
+bool button3_p2_last_state = 0;
+bool button4_p2_last_state = 0;
+bool button5_p2_last_state = 0;
+bool button6_p2_last_state = 0;
+bool button7_p2_last_state = 0;
+bool button8_p2_last_state = 0;
+
+bool button1_type = 0; // 0 - momentary, 1 - toggle
+bool button2_type = 0;
+bool button3_type = 0;
+bool button4_type = 0;
+bool button5_type = 0;
+bool button6_type = 0;
+bool button7_type = 0;
+bool button8_type = 0;
+bool button1_p2_type = 0;
+bool button2_p2_type = 0;
+bool button3_p2_type = 0;
+bool button4_p2_type = 0;
+bool button5_p2_type = 0;
+bool button6_p2_type = 0;
+bool button7_p2_type = 0;
+bool button8_p2_type = 0;
+
 
 short buttons_page = 1;
 short settings_page = 1;
@@ -89,9 +139,12 @@ bool confirmScreenLock = 0;
 
 bool levels_screen_switch = 1;
 bool menu_screen_switch = 0;
+bool about_screen_switch = 0;
 bool settings_screen_switch = 0;
 bool lock_screen_switch = 0;
 int menu_position = 0;
+
+bool buttons_lock_for_change_type = 0;
 
 // ###############
 // SETTINGS
@@ -107,8 +160,11 @@ short setting_feedback_mode = 2; // 1 - on, 2 - off
 
 void drawLevelsScreen();
 void drawMenuScreen();
+void drawAboutScreen();
 void drawSettingsScreen();
 void drawConfirm(const char* feature, const char* status);
+void drawMsgInfinite(const char* msg);
+void drawMsg(const char* msg);
 void drawLockScreen();
 
 void handleControlChange(byte channel, byte number, byte value);
@@ -141,6 +197,23 @@ void setup() {
   if (EEPROM.read(0) == 1 || EEPROM.read(0) == 2) {setting_comm_mode = EEPROM.read(0);}
   if (EEPROM.read(1) == 1 || EEPROM.read(1) == 2) {setting_button_shift_mode = EEPROM.read(1);}
   if (EEPROM.read(2) == 1 || EEPROM.read(2) == 2) {setting_feedback_mode = EEPROM.read(2);}
+  if (EEPROM.read(3) == 0 || EEPROM.read(3) == 1) {button1_type = EEPROM.read(3);}
+  if (EEPROM.read(4) == 0 || EEPROM.read(4) == 1) {button2_type = EEPROM.read(4);}
+  if (EEPROM.read(5) == 0 || EEPROM.read(5) == 1) {button3_type = EEPROM.read(5);}
+  if (EEPROM.read(6) == 0 || EEPROM.read(6) == 1) {button4_type = EEPROM.read(6);}
+  if (EEPROM.read(7) == 0 || EEPROM.read(7) == 1) {button5_type = EEPROM.read(7);}
+  if (EEPROM.read(8) == 0 || EEPROM.read(8) == 1) {button6_type = EEPROM.read(8);}
+  if (EEPROM.read(9) == 0 || EEPROM.read(9) == 1) {button7_type = EEPROM.read(9);}
+  if (EEPROM.read(10) == 0 || EEPROM.read(10) == 1) {button8_type = EEPROM.read(10);}
+  if (EEPROM.read(11) == 0 || EEPROM.read(11) == 1) {button1_p2_type = EEPROM.read(11);}
+  if (EEPROM.read(12) == 0 || EEPROM.read(12) == 1) {button2_p2_type = EEPROM.read(12);}
+  if (EEPROM.read(13) == 0 || EEPROM.read(13) == 1) {button3_p2_type = EEPROM.read(13);}
+  if (EEPROM.read(14) == 0 || EEPROM.read(14) == 1) {button4_p2_type = EEPROM.read(14);}
+  if (EEPROM.read(15) == 0 || EEPROM.read(15) == 1) {button5_p2_type = EEPROM.read(15);}
+  if (EEPROM.read(16) == 0 || EEPROM.read(16) == 1) {button6_p2_type = EEPROM.read(16);}
+  if (EEPROM.read(17) == 0 || EEPROM.read(17) == 1) {button7_p2_type = EEPROM.read(17);}
+  if (EEPROM.read(18) == 0 || EEPROM.read(18) == 1) {button8_p2_type = EEPROM.read(18);}
+  
 
   // OLED SCREEN INITIALIZATION AND INTRO ANIMATION
 
@@ -229,23 +302,72 @@ void loop() {
       if (!lock_screen_switch) 
       {
         if (buttons_page == 1) 
-        {
-          if (button1_last_state == 0)
+        { 
+          if (buttons_lock_for_change_type) 
           {
-            button1_last_state = 1;
-            MIDI.sendControlChange(5, 127, 1);
-            // drawConfirm("RVB", "ON");
+            if (button1_type == 0) {button1_type = 1;}
+            else {button1_type = 0;}
+            EEPROM.write(3, button1_type);
+            EEPROM.commit();
+            buttons_lock_for_change_type = 0;
+            drawMsg("Saved");
           }
           else
           {
-            button1_last_state = 0;
-            MIDI.sendControlChange(5, 0, 1);
-            // drawConfirm("RVB", "OFF");
+            if (button1_type == 0)
+            {
+              MIDI.sendControlChange(5, 127, 1);
+            }
+            else
+            {
+              if (button1_last_state == 0)
+              {
+                button1_last_state = 1;
+                MIDI.sendControlChange(5, 127, 1);
+                if (setting_feedback_mode == 2) {drawConfirm(BUTTON_1_NAME, "ON");}
+              }
+              else
+              {
+                button1_last_state = 0;
+                MIDI.sendControlChange(5, 0, 1);
+                if (setting_feedback_mode == 2) {drawConfirm(BUTTON_1_NAME, "OFF");}
+              }
+            }
           }
         }
         else if (buttons_page == 2) 
         {
-          MIDI.sendControlChange(13, 127, 1);
+          if (buttons_lock_for_change_type) 
+          {
+            if (button1_p2_type == 0) {button1_p2_type = 1;}
+            else {button1_p2_type = 0;}
+            EEPROM.write(11, button1_p2_type);
+            EEPROM.commit();
+            buttons_lock_for_change_type = 0;
+            drawMsg("Saved");
+          }
+          else
+          {
+            if (button1_p2_type == 0) 
+            {
+              MIDI.sendControlChange(13, 127, 1);
+            }
+            else
+            {
+              if (button1_p2_last_state == 0)
+              {
+                button1_p2_last_state = 1;
+                MIDI.sendControlChange(13, 127, 1);
+                if (setting_feedback_mode == 2) {drawConfirm(BUTTON_1_P2_NAME, "ON");}
+              }
+              else
+              {
+                button1_p2_last_state = 0;
+                MIDI.sendControlChange(13, 0, 1);
+                if (setting_feedback_mode == 2) {drawConfirm(BUTTON_1_P2_NAME, "OFF");}
+              }
+            }
+          }
           if (setting_button_shift_mode == 2) {buttons_page = 1;}
         }
       }
@@ -271,10 +393,58 @@ void loop() {
       if (!lock_screen_switch)
       {
         if (buttons_page == 1) {
-          MIDI.sendControlChange(6, 127, 1);
+          if (buttons_lock_for_change_type) {
+            if (button2_type == 0) {button2_type = 1;}
+            else {button2_type = 0;}
+            EEPROM.write(4, button2_type);
+            EEPROM.commit();
+            buttons_lock_for_change_type = 0;
+            drawMsg("Saved");
+          }
+          else {
+            if (button2_type == 0) {
+              MIDI.sendControlChange(6, 127, 1);
+            }
+            else {
+              if (button2_last_state == 0) {
+                button2_last_state = 1;
+                MIDI.sendControlChange(6, 127, 1);
+                if (setting_feedback_mode == 2) {drawConfirm(BUTTON_2_NAME, "ON");}
+              }
+              else {
+                button2_last_state = 0;
+                MIDI.sendControlChange(6, 0, 1);
+                if (setting_feedback_mode == 2) {drawConfirm(BUTTON_2_NAME, "OFF");}
+              }
+            }
+          }
         }
         else if (buttons_page == 2) {
-          MIDI.sendControlChange(14, 127, 1);
+          if (buttons_lock_for_change_type) {
+            if (button2_p2_type == 0) {button2_p2_type = 1;}
+            else {button2_p2_type = 0;}
+            EEPROM.write(12, button2_p2_type);
+            EEPROM.commit();
+            buttons_lock_for_change_type = 0;
+            drawMsg("Saved");
+          }
+          else {
+            if (button2_p2_type == 0) {
+              MIDI.sendControlChange(14, 127, 1);
+            }
+            else {
+              if (button2_p2_last_state == 0) {
+                button2_p2_last_state = 1;
+                MIDI.sendControlChange(14, 127, 1);
+                if (setting_feedback_mode == 2) {drawConfirm(BUTTON_2_P2_NAME, "ON");}
+              }
+              else {
+                button2_p2_last_state = 0;
+                MIDI.sendControlChange(14, 0, 1);
+                if (setting_feedback_mode == 2) {drawConfirm(BUTTON_2_P2_NAME, "OFF");}
+              }
+            }
+          }
           if (setting_button_shift_mode == 2) {buttons_page = 1;}
         }
       }
@@ -297,10 +467,60 @@ void loop() {
       if (!lock_screen_switch) 
       {
         if (buttons_page == 1) {
-          MIDI.sendControlChange(7, 127, 1);
+          if (buttons_lock_for_change_type) 
+          {
+            if (button3_type == 0) {button3_type = 1;}
+            else {button3_type = 0;}
+            EEPROM.write(5, button3_type);
+            EEPROM.commit();
+            buttons_lock_for_change_type = 0;
+            drawMsg("Saved");
+          }
+          else {
+            if (button3_type == 0) {
+              MIDI.sendControlChange(7, 127, 1);
+            }
+            else {
+              if (button3_last_state == 0) {
+                button3_last_state = 1;
+                MIDI.sendControlChange(7, 127, 1);
+                if (setting_feedback_mode == 2) {drawConfirm(BUTTON_3_NAME, "ON");}
+              }
+              else {
+                button3_last_state = 0;
+                MIDI.sendControlChange(7, 0, 1);
+                if (setting_feedback_mode == 2) {drawConfirm(BUTTON_3_NAME, "OFF");}
+              }
+            }
+          }
         }
         else if (buttons_page == 2) {
-          MIDI.sendControlChange(15, 127, 1);
+          if (buttons_lock_for_change_type) 
+          {
+            if (button3_p2_type == 0) {button3_p2_type = 1;}
+            else {button3_p2_type = 0;}
+            EEPROM.write(13, button3_p2_type);
+            EEPROM.commit();
+            buttons_lock_for_change_type = 0;
+            drawMsg("Saved");
+          }
+          else {
+            if (button3_p2_type == 0) {
+              MIDI.sendControlChange(15, 127, 1);
+            }
+            else {
+              if (button3_p2_last_state == 0) {
+                button3_p2_last_state = 1;
+                MIDI.sendControlChange(15, 127, 1);
+                if (setting_feedback_mode == 2) {drawConfirm(BUTTON_3_P2_NAME, "ON");}
+              }
+              else {
+                button3_p2_last_state = 0;
+                MIDI.sendControlChange(15, 0, 1);
+                if (setting_feedback_mode == 2) {drawConfirm(BUTTON_3_P2_NAME, "OFF");}
+              }
+            }
+          }
           if (setting_button_shift_mode == 2) {buttons_page = 1;}
         }
       }
@@ -323,10 +543,58 @@ void loop() {
       if (!lock_screen_switch) 
       {
         if (buttons_page == 1) {
-          MIDI.sendControlChange(8, 127, 1);
+          if (buttons_lock_for_change_type) {
+            if (button4_type == 0) {button4_type = 1;}
+            else {button4_type = 0;}
+            EEPROM.write(6, button4_type);
+            EEPROM.commit();
+            buttons_lock_for_change_type = 0;
+            drawMsg("Saved");
+          }
+          else {
+            if (button4_type == 0) {
+              MIDI.sendControlChange(8, 127, 1);
+            }
+            else {
+              if (button4_last_state == 0) {
+                button4_last_state = 1;
+                MIDI.sendControlChange(8, 127, 1);
+                if (setting_feedback_mode == 2) {drawConfirm(BUTTON_4_NAME, "ON");}
+              }
+              else {
+                button4_last_state = 0;
+                MIDI.sendControlChange(8, 0, 1);
+                if (setting_feedback_mode == 2) {drawConfirm(BUTTON_4_NAME, "OFF");}
+              }
+            }
+          }
         }
         else if (buttons_page == 2) {
-          MIDI.sendControlChange(16, 127, 1);
+          if (buttons_lock_for_change_type) {
+            if (button4_p2_type == 0) {button4_p2_type = 1;}
+            else {button4_p2_type = 0;}
+            EEPROM.write(14, button4_p2_type);
+            EEPROM.commit();
+            buttons_lock_for_change_type = 0;
+            drawMsg("Saved");
+          }
+          else {
+            if (button4_p2_type == 0) {
+              MIDI.sendControlChange(16, 127, 1);
+            }
+            else {
+              if (button4_p2_last_state == 0) {
+                button4_p2_last_state = 1;
+                MIDI.sendControlChange(16, 127, 1);
+                if (setting_feedback_mode == 2) {drawConfirm(BUTTON_4_P2_NAME, "ON");}
+              }
+              else {
+                button4_p2_last_state = 0;
+                MIDI.sendControlChange(16, 0, 1);
+                if (setting_feedback_mode == 2) {drawConfirm(BUTTON_4_P2_NAME, "OFF");}
+              }
+            }
+          }
           if (setting_button_shift_mode == 2) {buttons_page = 1;}
         }
       }
@@ -349,10 +617,59 @@ void loop() {
       if (!lock_screen_switch) 
       {
         if (buttons_page == 1) {
-          MIDI.sendControlChange(9, 127, 1);
+          if (buttons_lock_for_change_type)
+          {
+            if (button5_type == 0) {button5_type = 1;}
+            else {button5_type = 0;}
+            EEPROM.write(7, button5_type);
+            EEPROM.commit();
+            buttons_lock_for_change_type = 0;
+            drawMsg("Saved");
+          }
+          else {
+            if (button5_type == 0) {
+              MIDI.sendControlChange(9, 127, 1);
+            }
+            else {
+              if (button5_last_state == 0) {
+                button5_last_state = 1;
+                MIDI.sendControlChange(9, 127, 1);
+                if (setting_feedback_mode == 2) {drawConfirm(BUTTON_5_NAME, "ON");}
+              }
+              else {
+                button5_last_state = 0;
+                MIDI.sendControlChange(9, 0, 1);
+                if (setting_feedback_mode == 2) {drawConfirm(BUTTON_5_NAME, "OFF");}
+              }
+            }
+          }
         }
         else if (buttons_page == 2) {
-          MIDI.sendControlChange(17, 127, 1);
+          if (buttons_lock_for_change_type) {
+            if (button5_p2_type == 0) {button5_p2_type = 1;}
+            else {button5_p2_type = 0;}
+            EEPROM.write(15, button5_p2_type);
+            EEPROM.commit();
+            buttons_lock_for_change_type = 0;
+            drawMsg("Saved");
+          }
+          else {
+            if (button5_p2_type == 0) {
+              MIDI.sendControlChange(17, 127, 1);
+            }
+            else {
+              if (button5_p2_last_state == 0) {
+                button5_p2_last_state = 1;
+                MIDI.sendControlChange(17, 127, 1);
+                if (setting_feedback_mode == 2) {drawConfirm(BUTTON_5_P2_NAME, "ON");}
+              }
+              else {
+                button5_p2_last_state = 0;
+                MIDI.sendControlChange(17, 0, 1);
+                if (setting_feedback_mode == 2) {drawConfirm(BUTTON_5_P2_NAME, "OFF");}
+              }
+            }
+          }
           if (setting_button_shift_mode == 2) {buttons_page = 1;}
         }
       }
@@ -375,10 +692,59 @@ void loop() {
       if (!lock_screen_switch) 
       {
         if (buttons_page == 1) {
-          MIDI.sendControlChange(10, 127, 1);
+          if (buttons_lock_for_change_type)
+          {
+            if (button6_type == 0) {button6_type = 1;}
+            else {button6_type = 0;}
+            EEPROM.write(8, button6_type);
+            EEPROM.commit();
+            buttons_lock_for_change_type = 0;
+            drawMsg("Saved");
+          }
+          else {
+            if (button6_type == 0) {
+              MIDI.sendControlChange(10, 127, 1);
+            }
+            else {
+              if (button6_last_state == 0) {
+                button6_last_state = 1;
+                MIDI.sendControlChange(10, 127, 1);
+                if (setting_feedback_mode == 2) {drawConfirm(BUTTON_6_NAME, "ON");}
+              }
+              else {
+                button6_last_state = 0;
+                MIDI.sendControlChange(10, 0, 1);
+                if (setting_feedback_mode == 2) {drawConfirm(BUTTON_6_NAME, "OFF");}
+              }
+            }
+          }
         }
         else if (buttons_page == 2) {
-          MIDI.sendControlChange(18, 127, 1);
+          if (buttons_lock_for_change_type) {
+            if (button6_p2_type == 0) {button6_p2_type = 1;}
+            else {button6_p2_type = 0;}
+            EEPROM.write(16, button6_p2_type);
+            EEPROM.commit();
+            buttons_lock_for_change_type = 0;
+            drawMsg("Saved");
+          }
+          else {
+            if (button6_p2_type == 0) {
+              MIDI.sendControlChange(18, 127, 1);
+            }
+            else {
+              if (button6_p2_last_state == 0) {
+                button6_p2_last_state = 1;
+                MIDI.sendControlChange(18, 127, 1);
+                if (setting_feedback_mode == 2) {drawConfirm(BUTTON_6_P2_NAME, "ON");}
+              }
+              else {
+                button6_p2_last_state = 0;
+                MIDI.sendControlChange(18, 0, 1);
+                if (setting_feedback_mode == 2) {drawConfirm(BUTTON_6_P2_NAME, "OFF");}
+              }
+            }
+          }
           if (setting_button_shift_mode == 2) {buttons_page = 1;}
         }
       }
@@ -401,10 +767,59 @@ void loop() {
       if (!lock_screen_switch) 
       {
         if (buttons_page == 1) {
-          MIDI.sendControlChange(11, 127, 1);
+          if (buttons_lock_for_change_type)
+          {
+            if (button7_type == 0) {button7_type = 1;}
+            else {button7_type = 0;}
+            EEPROM.write(9, button7_type);
+            EEPROM.commit();
+            buttons_lock_for_change_type = 0;
+            drawMsg("Saved");
+          }
+          else {
+            if (button7_type == 0) {
+              MIDI.sendControlChange(11, 127, 1);
+            }
+            else {
+              if (button7_last_state == 0) {
+                button7_last_state = 1;
+                MIDI.sendControlChange(11, 127, 1);
+                if (setting_feedback_mode == 2) {drawConfirm(BUTTON_7_NAME, "ON");}
+              }
+              else {
+                button7_last_state = 0;
+                MIDI.sendControlChange(11, 0, 1);
+                if (setting_feedback_mode == 2) {drawConfirm(BUTTON_7_NAME, "OFF");}
+              }
+            }
+          }
         }
         else if (buttons_page == 2) {
-          MIDI.sendControlChange(19, 127, 1);
+          if (buttons_lock_for_change_type) {
+            if (button7_p2_type == 0) {button7_p2_type = 1;}
+            else {button7_p2_type = 0;}
+            EEPROM.write(17, button7_p2_type);
+            EEPROM.commit();
+            buttons_lock_for_change_type = 0;
+            drawMsg("Saved");
+          }
+          else {
+            if (button7_p2_type == 0) {
+              MIDI.sendControlChange(19, 127, 1);
+            }
+            else {
+              if (button7_p2_last_state == 0) {
+                button7_p2_last_state = 1;
+                MIDI.sendControlChange(19, 127, 1);
+                if (setting_feedback_mode == 2) {drawConfirm(BUTTON_7_P2_NAME, "ON");}
+              }
+              else {
+                button7_p2_last_state = 0;
+                MIDI.sendControlChange(19, 0, 1);
+                if (setting_feedback_mode == 2) {drawConfirm(BUTTON_7_P2_NAME, "OFF");}
+              }
+            }
+          }
           if (setting_button_shift_mode == 2) {buttons_page = 1;}
         }
       }
@@ -427,10 +842,58 @@ void loop() {
       if (!lock_screen_switch) 
       {
         if (buttons_page == 1) {
-          MIDI.sendControlChange(12, 127, 1);
+          if (buttons_lock_for_change_type) {
+            if (button8_type == 0) {button8_type = 1;}
+            else {button8_type = 0;}
+            EEPROM.write(10, button8_type);
+            EEPROM.commit();
+            buttons_lock_for_change_type = 0;
+            drawMsg("Saved");
+          }
+          else {
+            if (button8_type == 0) {
+              MIDI.sendControlChange(12, 127, 1);
+            }
+            else {
+              if (button8_last_state == 0) {
+                button8_last_state = 1;
+                MIDI.sendControlChange(12, 127, 1);
+                if (setting_feedback_mode == 2) {drawConfirm(BUTTON_8_NAME, "ON");}
+              }
+              else {
+                button8_last_state = 0;
+                MIDI.sendControlChange(12, 0, 1);
+                if (setting_feedback_mode == 2) {drawConfirm(BUTTON_8_NAME, "OFF");}
+              }
+            }
+          }
         }
         else if (buttons_page == 2) {
-          MIDI.sendControlChange(20, 127, 1);
+          if (buttons_lock_for_change_type) {
+            if (button8_p2_type == 0) {button8_p2_type = 1;}
+            else {button8_p2_type = 0;}
+            EEPROM.write(18, button8_p2_type);
+            EEPROM.commit();
+            buttons_lock_for_change_type = 0;
+            drawMsg("Saved");
+          }
+          else {
+            if (button8_p2_type == 0) {
+              MIDI.sendControlChange(20, 127, 1);
+            }
+            else {
+              if (button8_p2_last_state == 0) {
+                button8_p2_last_state = 1;
+                MIDI.sendControlChange(20, 127, 1);
+                if (setting_feedback_mode == 2) {drawConfirm(BUTTON_8_P2_NAME, "ON");}
+              }
+              else {
+                button8_p2_last_state = 0;
+                MIDI.sendControlChange(20, 0, 1);
+                if (setting_feedback_mode == 2) {drawConfirm(BUTTON_8_P2_NAME, "OFF");}
+              }
+            }
+          }
           if (setting_button_shift_mode == 2) {buttons_page = 1;}
         }
       }
@@ -453,7 +916,7 @@ void loop() {
         menu_screen_switch = 1;
         settings_screen_switch = 0;
       } 
-      else if (menu_screen_switch) { // ON MENU SCREEN ADVANCE MENU POSITION
+      else if (menu_screen_switch || settings_screen_switch) { // ON MENU OR SETTINGS SCREEN ADVANCE MENU POSITION
         if (menu_position < 3) {
           menu_position++;
         } 
@@ -461,14 +924,6 @@ void loop() {
           menu_position = 0;
         }
       } 
-      else if (settings_screen_switch) { // ON SETTINGS SCREEN ADVANCE MENU POSITION
-        if (menu_position < 3) {
-          menu_position++;
-        } 
-        else {
-          menu_position = 0;
-        }
-      }
     }
     else
     {
@@ -502,6 +957,8 @@ void loop() {
         }
         if (menu_position == 2) {
           menu_position = 0;
+          menu_screen_switch = 0;
+          about_screen_switch = 1;
         }
         if (menu_position == 3) {
           menu_position = 0;
@@ -550,7 +1007,8 @@ void loop() {
             EEPROM.commit();
           }
           if (settings_page == 2) { // PAGE 2
-            
+            buttons_lock_for_change_type = 1;
+            drawMsgInfinite("Press button");
           } 
           if (settings_page == 3) { // PAGE 3
             
@@ -582,6 +1040,13 @@ void loop() {
         }
         else if (buttons_page == 2) {
           buttons_page = 1;
+        }
+      }
+      else if (about_screen_switch) { // ON ABOUT SCREEN
+        if (menu_position == 0) {
+          about_screen_switch = 0;
+          menu_screen_switch = 1;
+          menu_position = 0;
         }
       }
     }
@@ -622,6 +1087,10 @@ void loop() {
         drawMenuScreen();
       }
 
+      if (about_screen_switch) {
+        drawAboutScreen();
+      }
+
       if (settings_screen_switch) {
         drawSettingsScreen();
       }  
@@ -637,7 +1106,7 @@ void loop() {
   if (millis() - confirmTime < 2000) {
     confirmScreenLock = 1;
   }
-  else if (millis() - confirmTime > 2000) {
+  else if (millis() - confirmTime > 2000 && buttons_lock_for_change_type == 0) {
     confirmScreenLock = 0;
   }
 }
@@ -823,7 +1292,7 @@ void drawMenuScreen(){
   }
 
   u8g2.setCursor(12, 50);
-  u8g2.print("");
+  u8g2.print("about");
   if (menu_position == 2) {
     u8g2.setCursor(4, 50);
     u8g2.print(">");
@@ -832,6 +1301,43 @@ void drawMenuScreen(){
   u8g2.setCursor(12, 62);
   u8g2.print("settings");
   if (menu_position == 3) {
+    u8g2.setCursor(4, 62);
+    u8g2.print(">");
+  }
+}
+
+void drawAboutScreen(){
+  u8g2.setFont(u8g2_font_helvR10_tf);
+  u8g2.setCursor(128 - 2 - u8g2.getStrWidth("about"), 12);
+  u8g2.print("about");
+
+  u8g2.setFont(u8g2_font_7x13_tf);
+
+  u8g2.setCursor(4, 26);
+  u8g2.print("madanowi.cz/deej");
+  // if (menu_position == 0) {
+  //   u8g2.setCursor(4, 26);
+  //   u8g2.print(">");
+  // }
+
+  u8g2.setCursor(4, 38);
+  u8g2.print("Kochajmy Labno");
+  // if (menu_position == 1) {
+  //   u8g2.setCursor(4, 38);
+  //   u8g2.print(">");
+  // }
+
+  u8g2.setCursor(4, 50);
+  u8g2.print("");
+  // if (menu_position == 2) {
+  //   u8g2.setCursor(4, 50);
+  //   u8g2.print(">");
+  // }
+
+  u8g2.setFont(u8g2_font_luRS10_tf);
+  u8g2.setCursor(12, 62);
+  u8g2.print("exit");
+  if (menu_position == 0) {
     u8g2.setCursor(4, 62);
     u8g2.print(">");
   }
@@ -881,7 +1387,7 @@ void drawSettingsScreen() {
     }
   }
   else if (settings_page == 2) {
-    u8g2.print("");
+    u8g2.print("chg btn type");
   }
   else if (settings_page == 3) {
     u8g2.print("");
@@ -915,6 +1421,37 @@ void drawConfirm(const char* feature, const char* status) {
   strcpy(buf, feature);
   strcat(buf, ": ");
   strcat(buf, status);
+  u8g2.setFont(u8g2_font_helvB12_tf);
+  u8g2.setCursor((128 - u8g2.getStrWidth(buf)) / 2, 40);
+  u8g2.print(buf);
+
+  u8g2.sendBuffer();
+
+  confirmTime = millis();
+  confirmScreenLock = 1;
+
+}
+
+void drawMsgInfinite(const char* msg) {
+  u8g2.clearBuffer();
+
+  char buf[25];
+  strcpy(buf, msg);
+  u8g2.setFont(u8g2_font_helvB12_tf);
+  u8g2.setCursor((128 - u8g2.getStrWidth(buf)) / 2, 40);
+  u8g2.print(buf);
+
+  u8g2.sendBuffer();
+
+  confirmScreenLock = 1;
+
+}
+
+void drawMsg(const char* msg) {
+  u8g2.clearBuffer();
+
+  char buf[25];
+  strcpy(buf, msg);
   u8g2.setFont(u8g2_font_helvB12_tf);
   u8g2.setCursor((128 - u8g2.getStrWidth(buf)) / 2, 40);
   u8g2.print(buf);
