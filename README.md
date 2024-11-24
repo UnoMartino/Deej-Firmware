@@ -28,7 +28,7 @@ From the root of the project run:
 
 ### Device information
 
-The device is based on the ESP32 ESP-WROOM-32 DevKit V1 microcontroller (see [photo](img/ESP32-Pinout.webp)). The firmware is written in C++ and uses the Arduino framework.
+The device is based on the ESP32 ESP-WROOM-32 DevKit V1 microcontroller (see [photo](img/ESP32-Pinout.jpg)). The firmware is written in C++ and uses the Arduino framework.
 
 Pinout:
 ```
